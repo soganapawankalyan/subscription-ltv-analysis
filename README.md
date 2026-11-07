@@ -1,5 +1,7 @@
 # Subscription Revenue, Churn and LTV Analysis
 
+**Live dashboard:** https://soganapawankalyan.github.io/subscription-ltv-analysis/dashboard/
+
 **SQL (SQLite) + Python | 25,000 synthetic customers | 36 months**
 
 Which customers are worth acquiring, and what did a price rise and a promotion really do to revenue?
