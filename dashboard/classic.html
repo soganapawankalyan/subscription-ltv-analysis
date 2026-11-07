@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subscription Revenue, Churn and LTV | Synthetic Data Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:#f9f9f7; --surface:#fcfcfb; --ink-1:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.06);
+    --focus:#2a78d6;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --gray-mark:#898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --ink-1:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --hover:rgba(255,255,255,0.07);
+      --focus:#6da7ec; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --ink-1:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --hover:rgba(255,255,255,0.07);
+    --focus:#6da7ec; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin:0; background:var(--page); color:var(--ink-1); font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:24px 16px 48px; }
+  h1,h2,h3,p { margin:0; }
+  button { font:inherit; color:inherit; }
+  a { color:var(--focus); }
+  :focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  header.top { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+  header.top h1 { font-size:1.5rem; line-height:1.25; font-weight:650; }
+  header.top .lede { color:var(--ink-2); font-size:.9375rem; margin-top:4px; max-width:70ch; }
+  .theme-btn { min-height:36px; padding:0 14px; border:1px solid var(--border); background:var(--surface); border-radius:8px; cursor:pointer; }
+  .theme-btn:hover { background:var(--hover); }
+  .notice { margin-top:16px; padding:10px 14px; border:1px solid var(--border); background:var(--surface); border-radius:8px; color:var(--ink-2); font-size:.875rem; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; min-width:0; }
+  .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .card h2 { font-size:1rem; font-weight:650; line-height:1.3; }
+  .card .sub { color:var(--ink-2); font-size:.875rem; margin-top:2px; }
+  .note { color:var(--ink-2); font-size:.875rem; margin-top:12px; }
+  .seg { display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; flex:none; }
+  .seg button { min-height:32px; padding:0 12px; border:0; background:transparent; cursor:pointer; font-size:.8125rem; color:var(--ink-2); }
+  .seg button + button { border-left:1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background:var(--hover); color:var(--ink-1); font-weight:600; }
+  .seg button:hover { background:var(--hover); }
+  @media (pointer:coarse) { .seg button, .theme-btn { min-height:44px; min-width:44px; } }
+
+  .hero { margin-top:24px; display:grid; gap:16px; grid-template-columns:minmax(0,1fr); }
+  .hero-fig { padding:24px; }
+  .hero-fig .label { color:var(--ink-2); font-size:.875rem; }
+  .hero-fig .big { font-size:3.25rem; line-height:1.1; font-weight:650; letter-spacing:-.02em; margin-top:4px; }
+  .hero-fig .small { color:var(--ink-2); font-size:.875rem; margin-top:8px; }
+  .tiles { display:grid; gap:16px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tile { padding:16px 18px; }
+  .tile .label { color:var(--ink-2); font-size:.8125rem; }
+  .tile .value { font-size:1.75rem; line-height:1.2; font-weight:650; margin-top:2px; }
+  .tile .hint { color:var(--ink-2); font-size:.8125rem; margin-top:2px; }
+
+  .findings { margin-top:16px; display:grid; gap:16px; grid-template-columns:minmax(0,1fr); }
+  .finding { padding:18px 20px; }
+  .finding .n { font-size:2rem; line-height:1.1; font-weight:650; }
+  .finding h3 { font-size:.9375rem; font-weight:650; margin-top:6px; }
+  .finding p { color:var(--ink-2); font-size:.875rem; margin-top:4px; }
+  .finding .act { margin-top:8px; font-size:.875rem; }
+  .finding .act b { font-weight:650; }
+
+  .grid { margin-top:16px; display:grid; gap:16px; grid-template-columns:minmax(0,1fr); }
+  h2.section { margin-top:32px; font-size:1.125rem; font-weight:650; }
+  @media (min-width:760px) {
+    .hero { grid-template-columns:minmax(0,1.1fr) minmax(0,1.9fr); }
+    .tiles { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .findings { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .span2 { grid-column:1 / -1; }
+  }
+
+  svg { display:block; max-width:100%; overflow:visible; }
+  svg text { font-family:inherit; }
+  .gridline { stroke:var(--grid); stroke-width:1; }
+  .axisline { stroke:var(--axis); stroke-width:1; }
+  .tick,.lbl { fill:var(--ink-2); font-size:12px; }
+  .val { fill:var(--ink-1); font-size:12px; font-weight:600; paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round; }
+  .ann { fill:var(--ink-1); font-size:12px; }
+  .refline { stroke:var(--ink-2); stroke-width:1; stroke-dasharray:4 3; }
+  .cross { stroke:var(--ink-2); stroke-width:1; }
+  .dot { stroke:var(--surface); stroke-width:2; }
+  .hit { fill:transparent; outline:none; cursor:default; }
+  .hit:hover,.hit:focus { fill:var(--hover); }
+  .hit:focus-visible { stroke:var(--focus); stroke-width:2; }
+  svg.focusable:focus-visible { outline:2px solid var(--focus); outline-offset:4px; }
+
+  #tip { position:fixed; z-index:10; pointer-events:none; min-width:140px; max-width:260px; padding:8px 10px; background:var(--surface);
+         border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); font-size:.8125rem; display:none; }
+  #tip .t { font-weight:650; margin-bottom:4px; }
+  #tip .r { display:flex; align-items:center; gap:6px; justify-content:space-between; }
+  #tip .r span.k { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); }
+  #tip .sw { width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin-bottom:8px; font-size:.8125rem; color:var(--ink-2); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:12px; height:3px; border-radius:2px; display:inline-block; }
+
+  details.twin { margin-top:12px; }
+  details.twin summary { cursor:pointer; color:var(--ink-2); font-size:.8125rem; min-height:32px; display:flex; align-items:center; }
+  .tablewrap { overflow-x:auto; margin-top:8px; }
+  table { border-collapse:collapse; width:100%; font-size:.8125rem; font-variant-numeric:tabular-nums; }
+  th,td { text-align:right; padding:6px 10px; border-bottom:1px solid var(--grid); white-space:nowrap; }
+  th:first-child,td:first-child { text-align:left; }
+  th { color:var(--ink-2); font-weight:600; }
+
+  .recs { margin:12px 0 0; padding-left:20px; color:var(--ink-1); font-size:.9375rem; }
+  .recs li { margin-top:8px; }
+  .recs li span { color:var(--ink-2); }
+  footer { margin-top:32px; color:var(--ink-2); font-size:.8125rem; }
+  footer p + p { margin-top:8px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Subscription Revenue, Churn and LTV</h1>
+      <p class="lede">A synthetic streaming-style subscription business, January 2023 to December 2025. Which customers are worth acquiring, and what did a price rise and a promotion really do?</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false">Toggle dark mode</button>
+  </header>
+  <div class="notice"><b>Synthetic data.</b> The company and all numbers are generated for this portfolio project. Real subscription businesses are inspiration only; no real company's data or decisions are represented. Several patterns (promo cliff, price-rise response, channel quality) were built into the generator on purpose.</div>
+
+  <section class="hero" aria-label="Headline numbers">
+    <div class="card hero-fig">
+      <div class="label">Monthly recurring revenue, Dec 2025</div>
+      <div class="big" id="heroMrr"></div>
+      <div class="small" id="heroSub"></div>
+    </div>
+    <div class="tiles">
+      <div class="card tile"><div class="label">Customers subscribed</div><div class="value" id="tCust"></div><div class="hint">Dec 2025</div></div>
+      <div class="card tile"><div class="label">12-month net revenue retention</div><div class="value" id="tNrr"></div><div class="hint">Below 100%: existing customers shrink</div></div>
+      <div class="card tile"><div class="label">Monthly logo churn</div><div class="value" id="tChurn"></div><div class="hint">Dec 2025</div></div>
+    </div>
+  </section>
+
+  <section class="findings" aria-label="Key findings">
+    <div class="card finding"><div class="n" id="f1n"></div><h3>Paid social does not earn back its cost</h3>
+      <p id="f1p"></p><div class="act"><b>Do:</b> move budget toward referral and partnership; test the shift on a capped budget first.</div></div>
+    <div class="card finding"><div class="n" id="f2n"></div><h3>Falling churn is mostly mix shift</h3>
+      <p id="f2p"></p><div class="act"><b>Do:</b> track churn within each channel, not only the blended rate.</div></div>
+    <div class="card finding"><div class="n" id="f3n"></div><h3>The price rise paid off, with a cost</h3>
+      <p id="f3p"></p><div class="act"><b>Do:</b> stage future rises and pair them with a retention offer.</div></div>
+  </section>
+
+  <h2 class="section">Revenue</h2>
+  <div class="grid">
+    <div class="card span2" id="c-mrr"><div class="card-head"><div><h2>MRR over time</h2><p class="sub">Monthly recurring revenue across all plans</p></div></div><div class="chart"></div><div class="note">Net revenue retention stays below 100% every month: growth comes from new signups, not from the existing base.</div></div>
+    <div class="card span2" id="c-bridge"><div class="card-head"><div><h2>Where MRR moved, by cause</h2><p class="sub">Total change in MRR for the period; blue adds revenue, orange removes it</p></div>
+      <div class="seg" id="bridgeSeg" role="group" aria-label="Period"></div></div><div class="chart"></div></div>
+  </div>
+
+  <h2 class="section">Retention and customer value</h2>
+  <div class="grid">
+    <div class="card" id="c-km"><div class="card-head"><div><h2>Share of customers still subscribed</h2><p class="sub">Kaplan-Meier survival, by months since signup</p></div>
+      <div class="seg" id="kmSeg" role="group" aria-label="Group by"></div></div><div class="legend"></div><div class="chart"></div></div>
+    <div class="card" id="c-ltv"><div class="card-head"><div><h2>Do channels earn back their cost?</h2><p class="sub">Gross-profit LTV divided by CAC</p></div>
+      <div class="seg" id="ltvSeg" role="group" aria-label="Horizon"></div></div><div class="chart"></div>
+      <div class="note">Dashed line is the 3x rule of thumb. *Organic CAC is only partly tracked, so its ratio is overstated.</div></div>
+    <div class="card span2" id="c-tbl"><div class="card-head"><div><h2>Acquisition economics by channel</h2><p class="sub">70% gross margin assumed; 60-month figures extrapolate beyond month 24</p></div></div><div class="tablewrap"></div></div>
+  </div>
+
+  <h2 class="section">What changed churn</h2>
+  <div class="grid">
+    <div class="card" id="c-hazard"><div class="card-head"><div><h2>Churn is highest early</h2><p class="sub">Chance of cancelling in each month of tenure</p></div></div><div class="chart"></div></div>
+    <div class="card" id="c-mix"><div class="card-head"><div><h2>Blended vs mix-adjusted churn</h2><p class="sub">Monthly churn by year; adjusted holds the 2023 channel mix fixed</p></div></div><div class="legend"></div><div class="chart"></div>
+      <div class="note">From 2024 to 2025, churn within channels did not improve. The blended drop came from more referral and fewer paid-social customers.</div></div>
+    <div class="card" id="c-promo"><div class="card-head"><div><h2>The promo cliff</h2><p class="sub">Churn by tenure month, promo vs other signups</p></div></div><div class="legend"></div><div class="chart"></div>
+      <div class="note">Promo customers (50% off for 3 months) churn 10.7% in month 4, when full price starts. By month 12 their retention is no better.</div></div>
+    <div class="card" id="c-price"><div class="card-head"><div><h2>Standard plan price rise, March 2025</h2><p class="sub">Monthly churn on the Standard plan</p></div></div><div class="chart"></div>
+      <div class="note" id="priceNote"></div></div>
+  </div>
+
+  <h2 class="section">Recommendations</h2>
+  <div class="card" style="margin-top:12px">
+    <ol class="recs">
+      <li><b>Shift budget from paid social to referral and partnership.</b> <span>Referral returns roughly nine times more lifetime profit per dollar. Test with a capped change.</span></li>
+      <li><b>Rework the promotion.</b> <span>A 50% discount that only delays cancellation costs revenue. Test a smaller or stepped discount.</span></li>
+      <li><b>Pair price rises with a retention offer.</b> <span>The rise was net positive, but churn and downgrades spiked for three months.</span></li>
+      <li><b>Invest in the first 90 days.</b> <span>Churn is highest in months 2 and 3, so onboarding is the cheapest place to improve retention.</span></li>
+      <li><b>Test an early-upgrade nudge.</b> <span>Customers who upgrade early retain better (77.8% vs 65.3%, n = 288), but engaged customers may simply be the ones who upgrade.</span></li>
+    </ol>
+  </div>
+
+  <footer>
+    <p><b>Method.</b> SQL (SQLite) builds MRR, churn, cohorts, CAC and diagnostics. Python fits Kaplan-Meier survival curves (customers still active in Dec 2025 are censored) and projects 60-month gross-profit LTV: observed curve to month 24, then constant churn at each channel's months 13 to 24 average. Gross margin of 70% is an assumption. Bootstrap intervals capture sampling noise only, not the tail assumption.</p>
+    <p><b>Limits.</b> Mix-adjusted churn controls for channel only. Plan and channel overlap, so plan retention is not a pure plan effect. The price-rise estimate assumes excess churn was caused by the rise.</p>
+  </footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const DATA = {"mrr": {"month": ["2023-01-01", "2023-02-01", "2023-03-01", "2023-04-01", "2023-05-01", "2023-06-01", "2023-07-01", "2023-08-01", "2023-09-01", "2023-10-01", "2023-11-01", "2023-12-01", "2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01"], "customers_subscribed": [581, 1025, 1445, 1852, 2253, 2659, 3029, 3425, 3815, 4206, 4760, 5235, 5730, 6086, 6462, 6849, 7271, 7668, 8020, 8400, 8788, 9207, 9772, 10259, 10764, 11135, 11460, 11732, 12046, 12450, 12805, 13208, 13581, 13980, 14536, 15023], "customers_paying": [581, 1022, 1434, 1828, 2224, 2632, 3000, 3386, 3780, 4163, 4719, 5188, 5680, 6024, 6394, 6768, 7193, 7593, 7933, 8299, 8701, 9116, 9672, 10133, 10653, 11021, 11339, 11594, 11906, 12316, 12684, 13089, 13433, 13800, 14357, 14860], "mrr": [7317.32, 12961.01, 18112.08, 23074.14, 28274.26, 33547.24, 38239.54, 43271.62, 48407.57, 53424.8, 58599.33, 64787.58, 71740.49, 78516.41, 83255.78, 88595.99, 94393.73, 100100.66, 104761.35, 109681.61, 115228.56, 121013.44, 126206.06, 132539.26, 139866.03, 147525.57, 162053.4, 165306.88, 169475.78, 175791.68, 181455.89, 187751.76, 193318.34, 198122.79, 206445.25, 214378.16], "arpu_paying": [12.59, 12.68, 12.63, 12.62, 12.71, 12.75, 12.75, 12.78, 12.81, 12.83, 12.42, 12.49, 12.63, 13.03, 13.02, 13.09, 13.12, 13.18, 13.21, 13.22, 13.24, 13.27, 13.05, 13.08, 13.13, 13.39, 14.29, 14.26, 14.23, 14.27, 14.31, 14.34, 14.39, 14.36, 14.38, 14.43]}, "bridge": {"month": ["2023-01-01", "2023-02-01", "2023-03-01", "2023-04-01", "2023-05-01", "2023-06-01", "2023-07-01", "2023-08-01", "2023-09-01", "2023-10-01", "2023-11-01", "2023-12-01", "2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01"], "new_mrr": [7317.32, 6023.34, 5995.31, 6078.16, 6478.08, 6470.98, 5918.27, 6684.65, 6896.55, 7097.51, 7220.77, 8279.58, 9256.99, 7638.12, 7696.98, 8144.76, 8061.77, 8462.57, 7997.96, 8578.31, 8794.2, 9076.17, 9021.52, 10049.18, 11140.69, 9697.71, 10538.57, 10412.58, 10874.4, 11050.18, 10684.54, 11384.0, 11849.87, 11273.84, 14094.04, 13562.65], "upgrade": [0.0, 42.0, 81.0, 75.0, 89.99, 138.0, 144.0, 150.0, 138.0, 198.0, 204.0, 185.97, 231.0, 362.97, 342.0, 354.0, 357.98, 308.99, 306.0, 318.0, 422.99, 372.0, 411.0, 542.98, 375.0, 601.95, 578.98, 492.0, 488.0, 621.98, 555.99, 684.0, 565.99, 636.0, 692.0, 832.0], "promo_rolloff": [0.0, 0.0, 0.0, 87.9, 113.91, 106.85, 116.86, 125.87, 145.8, 79.88, 52.94, 67.91, 154.82, 1851.65, 132.86, 141.82, 217.8, 182.8, 111.89, 151.81, 128.82, 177.77, 165.86, 183.84, 144.8, 2158.38, 133.84, 189.78, 195.8, 99.86, 243.7, 211.77, 131.82, 169.83, 199.79, 195.77], "price_increase": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9533.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "resume": [0.0, 0.0, 0.0, 35.97, 65.94, 191.85, 97.93, 119.91, 201.86, 137.88, 171.86, 175.87, 217.84, 207.83, 299.79, 259.81, 411.71, 405.68, 407.7, 359.73, 521.64, 497.67, 375.71, 305.76, 622.56, 439.63, 627.56, 571.63, 651.51, 683.55, 731.49, 563.6, 467.64, 703.51, 803.45, 979.31], "downgrade": [0.0, -18.0, -36.0, -35.01, -86.99, -72.0, -93.0, -72.0, -87.0, -126.0, -149.01, -153.0, -135.0, -194.02, -222.0, -170.99, -203.01, -244.02, -216.0, -270.0, -300.0, -306.0, -420.0, -368.99, -301.99, -324.02, -674.01, -660.0, -800.0, -479.99, -404.0, -420.0, -480.0, -588.0, -480.0, -624.0], "pause": [0.0, -29.97, -107.91, -189.83, -195.86, -251.82, -143.88, -307.78, -199.85, -325.75, -261.8, -302.78, -319.77, -445.68, -519.65, -567.56, -417.67, -587.6, -789.44, -769.46, -527.61, -717.47, -677.49, -854.36, -747.5, -665.48, -845.34, -1115.27, -1023.26, -811.4, -923.39, -823.44, -1191.17, -1523.02, -1063.24, -1159.19], "churn": [0.0, -373.68, -781.33, -1090.13, -1264.95, -1310.88, -1347.88, -1668.57, -1959.41, -2044.29, -2064.23, -2065.3, -2452.97, -2644.95, -2990.61, -2821.63, -2630.84, -2821.49, -3157.42, -3448.13, -3493.09, -3315.26, -3683.98, -3525.21, -3906.79, -4248.63, -5364.77, -6637.24, -6217.55, -4848.28, -5224.12, -5304.06, -5777.57, -5867.71, -5923.58, -5853.63], "net_change": [7317.32, 5643.69, 5151.07, 4962.06, 5200.12, 5272.98, 4692.3, 5032.08, 5135.95, 5017.23, 5174.53, 6188.25, 6952.91, 6775.92, 4739.37, 5340.21, 5797.74, 5706.93, 4660.69, 4920.26, 5546.95, 5784.88, 5192.62, 6333.2, 7326.77, 7659.54, 14527.83, 3253.48, 4168.9, 6315.9, 5664.21, 6295.87, 5566.58, 4804.45, 8322.46, 7932.91]}, "nrr": {"month": ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01"], "mrr_12m_ago": [7317.32, 12961.01, 18112.08, 23074.14, 28274.26, 33547.24, 38239.54, 43271.62, 48407.57, 53424.8, 58599.33, 64787.58, 71740.49, 78516.41, 83255.78, 88595.99, 94393.73, 100100.66, 104761.35, 109681.61, 115228.56, 121013.44, 126206.06, 132539.26], "mrr_now_same_customers": [4694.49, 8451.74, 11891.08, 15408.45, 19321.61, 23092.76, 26300.3, 30223.35, 34130.45, 38213.48, 43531.58, 48090.3, 53148.77, 57389.88, 64999.18, 68220.85, 71562.26, 75779.62, 79928.85, 84485.81, 88591.02, 92452.29, 98388.46, 103189.25], "nrr_pct": [64.2, 65.2, 65.7, 66.8, 68.3, 68.8, 68.8, 69.8, 70.5, 71.5, 74.3, 74.2, 74.1, 73.1, 78.1, 77.0, 75.8, 75.7, 76.3, 77.0, 76.9, 76.4, 78.0, 77.9]}, "churn_month": {"month": ["2023-02-01", "2023-03-01", "2023-04-01", "2023-05-01", "2023-06-01", "2023-07-01", "2023-08-01", "2023-09-01", "2023-10-01", "2023-11-01", "2023-12-01", "2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01"], "start_of_month": [581, 1025, 1445, 1852, 2253, 2659, 3029, 3425, 3815, 4206, 4760, 5235, 5730, 6086, 6462, 6849, 7271, 7668, 8020, 8400, 8788, 9207, 9772, 10259, 10764, 11135, 11460, 11732, 12046, 12450, 12805, 13208, 13581, 13980, 14536], "cancels": [33, 68, 93, 111, 117, 118, 151, 168, 179, 190, 188, 226, 260, 252, 253, 229, 266, 276, 306, 310, 290, 319, 316, 356, 385, 443, 507, 477, 399, 413, 423, 464, 450, 468, 473], "logo_churn_pct": [5.68, 6.63, 6.44, 5.99, 5.19, 4.44, 4.99, 4.91, 4.69, 4.52, 3.95, 4.32, 4.54, 4.14, 3.92, 3.34, 3.66, 3.6, 3.82, 3.69, 3.3, 3.46, 3.23, 3.47, 3.58, 3.98, 4.42, 4.07, 3.31, 3.32, 3.3, 3.51, 3.31, 3.35, 3.25]}, "churn_tenure": {"tenure_month": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], "at_risk": [24040, 21624, 19586, 17943, 16520, 15236, 14072, 12981, 11998, 11079, 10257, 9395, 8701, 7961, 7367, 6794, 6227, 5693, 5198, 4760, 4315, 3879, 3494], "cancels": [1467, 1275, 926, 744, 698, 561, 498, 462, 418, 358, 348, 219, 212, 175, 163, 171, 162, 147, 111, 113, 117, 94, 89], "churn_pct": [6.1, 5.9, 4.73, 4.15, 4.23, 3.68, 3.54, 3.56, 3.48, 3.23, 3.39, 2.33, 2.44, 2.2, 2.21, 2.52, 2.6, 2.58, 2.14, 2.37, 2.71, 2.42, 2.55]}, "cohort": {"cohort": ["2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2", "2025-Q3", "2025-Q4"], "customers": [1546, 1535, 1593, 1977, 1965, 1954, 2012, 2396, 2385, 2373, 2431, 2833], "retained_3m": [82.8, 84.2, 84.1, 83.9, 85.4, 84.7, 84.5, 84.6, 81.8, 84.6, 85.0, NaN], "retained_6m": [73.6, 73.2, 74.5, 74.3, 76.0, 75.0, 75.4, 73.9, 72.6, 75.0, NaN, NaN], "retained_12m": [59.7, 59.3, 62.0, 61.2, 62.8, 61.1, 63.1, 60.4, NaN, NaN, NaN, NaN], "retained_24m": [44.8, 45.9, 45.3, 45.1, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN]}, "cac_year": {"channel": ["organic", "organic", "organic", "paid_search", "paid_search", "paid_search", "paid_social", "paid_social", "paid_social", "partnership", "partnership", "partnership", "referral", "referral", "referral"], "yr": ["2023", "2024", "2025", "2023", "2024", "2025", "2023", "2024", "2025", "2023", "2024", "2025", "2023", "2024", "2025"], "new_customers": [1998, 2482, 2985, 1143, 1359, 1503, 2077, 2070, 1848, 711, 882, 1175, 722, 1534, 2511], "cac": [8.1, 8.16, 8.11, 74.47, 81.22, 88.85, 91.01, 100.87, 114.68, 39.44, 41.58, 41.61, 24.8, 25.76, 26.26]}, "mix": {"yr": ["2023", "2024", "2025"], "blended_churn_pct": [4.87, 3.69, 3.55], "churn_pct_at_2023_mix": [4.87, 3.89, 3.94]}, "promo": {"tenure_month": [2, 3, 4, 5, 6, 7, 8, 9], "promo_churn_pct": [4.26, 4.3, 10.73, 3.47, 4.56, 4.25, 3.69, 4.03], "non_promo_churn_pct": [6.24, 6.02, 4.24, 4.2, 4.2, 3.64, 3.53, 3.52]}, "std": {"month": ["2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01"], "std_customers_prev": [4006, 4183, 4343, 4564, 4770, 5023, 5224, 5287, 5325, 5391, 5565, 5732], "cancels": [136, 115, 129, 137, 145, 158, 226, 284, 272, 166, 200, 193], "std_churn_pct": [3.39, 2.75, 2.97, 3.0, 3.04, 3.15, 4.33, 5.37, 5.11, 3.08, 3.59, 3.37], "std_downgrade_pct": [0.92, 1.08, 1.31, 0.96, 0.73, 0.78, 1.95, 1.38, 1.73, 0.98, 0.7, 0.75], "std_mrr": [57688.0, 59877.0, 61746.0, 64530.0, 68265.0, 72084.0, 83380.0, 83860.0, 84763.0, 87625.0, 90304.0, 93582.0]}, "price": {"baseline_churn_pct": [3.05], "post_rise_churn_pct": [4.94], "excess_cancels_3m": [299.0], "price_gain_3m": [31521.0], "price_gain_per_month": [10507.0], "mrr_lost_per_month_from_excess_churn": [4782.0]}, "early": {"group_": ["stayed Basic through month 3", "upgraded in first 3 months"], "customers": [4114, 288], "retained_12m": [65.3, 77.8]}, "km": {"channel": {"organic": [1.0, 0.9437, 0.8961, 0.8566, 0.8241, 0.7923, 0.7683, 0.744, 0.7206, 0.6971, 0.6743, 0.6531, 0.6423, 0.6298, 0.6161, 0.6046, 0.5904, 0.5756, 0.562, 0.5486, 0.5394, 0.5289, 0.5129, 0.5007, 0.4919, 0.4833, 0.4712, 0.4618, 0.4542, 0.4503, 0.4401, 0.4307, 0.4243, 0.4113, 0.4068, 0.4036], "paid_search": [1.0, 0.9398, 0.8792, 0.8299, 0.7943, 0.7582, 0.7265, 0.7001, 0.6731, 0.6498, 0.6288, 0.6081, 0.593, 0.5798, 0.5685, 0.5522, 0.5372, 0.5175, 0.5031, 0.4951, 0.4823, 0.4691, 0.4614, 0.4479, 0.435, 0.4183, 0.4073, 0.3924, 0.3807, 0.373, 0.3641, 0.3516, 0.3437], "paid_social": [1.0, 0.9084, 0.8308, 0.7766, 0.7279, 0.6814, 0.6431, 0.6094, 0.5766, 0.5457, 0.5203, 0.496, 0.4783, 0.4597, 0.4464, 0.4325, 0.4172, 0.4044, 0.39, 0.3781, 0.3658, 0.3514, 0.3389, 0.3264, 0.3132, 0.2992, 0.2881, 0.2755, 0.2675, 0.2615, 0.2505, 0.2447, 0.2363, 0.2319, 0.2319], "partnership": [1.0, 0.9599, 0.9175, 0.8927, 0.8678, 0.8464, 0.8245, 0.805, 0.7834, 0.767, 0.7565, 0.7326, 0.7191, 0.7065, 0.6943, 0.6843, 0.6722, 0.6609, 0.6498, 0.6398, 0.6282, 0.6127, 0.6083, 0.6035, 0.5894, 0.5838, 0.5695, 0.5569, 0.5507, 0.5392, 0.5365, 0.5333, 0.5333, 0.5239], "referral": [1.0, 0.9694, 0.9394, 0.9148, 0.8961, 0.8764, 0.8585, 0.8406, 0.8266, 0.8113, 0.795, 0.7803, 0.768, 0.756, 0.7464, 0.7389, 0.7307, 0.7238, 0.7142, 0.7091, 0.6954, 0.6842, 0.6785, 0.67, 0.6639, 0.6555, 0.6456, 0.6324, 0.6302, 0.6224, 0.6131, 0.6094, 0.6049, 0.5991]}, "plan": {"Basic": [1.0, 0.925, 0.8583, 0.8069, 0.7668, 0.7262, 0.6925, 0.6638, 0.6347, 0.606, 0.5818, 0.5607, 0.5449, 0.5305, 0.5162, 0.5042, 0.491, 0.4761, 0.4602, 0.4511, 0.4376, 0.4244, 0.4126, 0.3999, 0.387, 0.3781, 0.3662, 0.3533, 0.3461, 0.3385, 0.3311, 0.3253, 0.3205, 0.3116, 0.3096, 0.3096], "Premium": [1.0, 0.9641, 0.9306, 0.9088, 0.8882, 0.8653, 0.8455, 0.8252, 0.8055, 0.7882, 0.7765, 0.7592, 0.7463, 0.7368, 0.7256, 0.7124, 0.7008, 0.6895, 0.6751, 0.6609, 0.6525, 0.6416, 0.6282, 0.6202, 0.6097, 0.599, 0.5871, 0.5757, 0.5658, 0.5609, 0.5572, 0.5447, 0.527, 0.527, 0.5144], "Standard": [1.0, 0.9451, 0.8948, 0.8558, 0.8218, 0.7907, 0.7647, 0.7397, 0.7164, 0.6947, 0.6727, 0.6496, 0.6365, 0.6203, 0.6086, 0.5961, 0.581, 0.567, 0.5557, 0.5448, 0.5332, 0.5195, 0.5094, 0.4973, 0.4866, 0.4724, 0.4602, 0.4477, 0.4397, 0.4332, 0.4194, 0.4114, 0.407, 0.3958, 0.3913, 0.385, 0.385]}, "promo": {"0": [1.0, 0.9401, 0.8859, 0.8499, 0.8156, 0.7828, 0.7554, 0.7299, 0.7054, 0.6816, 0.6611, 0.6388, 0.6248, 0.6107, 0.5982, 0.5856, 0.5716, 0.5581, 0.5449, 0.5338, 0.5224, 0.5092, 0.498, 0.486, 0.4744, 0.4627, 0.4499, 0.4369, 0.4285, 0.4218, 0.4124, 0.404, 0.3974, 0.3884, 0.3832, 0.379, 0.379], "1": [1.0, 0.9581, 0.9178, 0.8215, 0.7936, 0.7581, 0.7263, 0.7, 0.6725, 0.6532, 0.6261, 0.6153, 0.5999, 0.5832, 0.57, 0.5585, 0.5468, 0.5273, 0.5107, 0.5027, 0.4862, 0.4747, 0.4615, 0.4536, 0.4436, 0.4316, 0.4262]}}, "ltv": [{"channel": "referral", "customers": 4767, "cac": 25.88, "tail_monthly_churn_pct": 1.21, "ltv_12m": 106.03, "ltv_24m": 194.62, "ltv_60m": 394.98, "ltv_60m_lo": 382.95, "ltv_60m_hi": 407.38, "ltv_60m_discounted": 325.02, "ltv_to_cac_12m": 4.1, "ltv_to_cac_24m": 7.52, "ltv_to_cac_60m": 15.26, "ltv_to_cac_60m_lo": 14.8, "ltv_to_cac_60m_hi": 15.74, "payback_month": 3, "share_of_60m_ltv_beyond_month_24": 50.7}, {"channel": "partnership", "customers": 2768, "cac": 41.05, "tail_monthly_churn_pct": 1.64, "ltv_12m": 95.12, "ltv_24m": 172.0, "ltv_60m": 329.24, "ltv_60m_lo": 315.59, "ltv_60m_hi": 342.74, "ltv_60m_discounted": 273.39, "ltv_to_cac_12m": 2.32, "ltv_to_cac_24m": 4.19, "ltv_to_cac_60m": 8.02, "ltv_to_cac_60m_lo": 7.69, "ltv_to_cac_60m_hi": 8.35, "payback_month": 5, "share_of_60m_ltv_beyond_month_24": 47.8}, {"channel": "organic", "customers": 7465, "cac": 8.12, "tail_monthly_churn_pct": 2.2, "ltv_12m": 92.14, "ltv_24m": 160.45, "ltv_60m": 283.33, "ltv_60m_lo": 276.63, "ltv_60m_hi": 290.94, "ltv_60m_discounted": 238.46, "ltv_to_cac_12m": 11.34, "ltv_to_cac_24m": 19.75, "ltv_to_cac_60m": 34.88, "ltv_to_cac_60m_lo": 34.05, "ltv_to_cac_60m_hi": 35.81, "payback_month": 1, "share_of_60m_ltv_beyond_month_24": 43.4}, {"channel": "paid_search", "customers": 4005, "cac": 82.16, "tail_monthly_churn_pct": 2.55, "ltv_12m": 82.83, "ltv_24m": 142.47, "ltv_60m": 241.76, "ltv_60m_lo": 233.07, "ltv_60m_hi": 251.65, "ltv_60m_discounted": 204.87, "ltv_to_cac_12m": 1.01, "ltv_to_cac_24m": 1.73, "ltv_to_cac_60m": 2.94, "ltv_to_cac_60m_lo": 2.84, "ltv_to_cac_60m_hi": 3.06, "payback_month": 12, "share_of_60m_ltv_beyond_month_24": 41.1}, {"channel": "paid_social", "customers": 5995, "cac": 101.71, "tail_monthly_churn_pct": 3.47, "ltv_12m": 70.01, "ltv_24m": 114.06, "ltv_60m": 173.83, "ltv_60m_lo": 167.89, "ltv_60m_hi": 179.8, "ltv_60m_discounted": 150.27, "ltv_to_cac_12m": 0.69, "ltv_to_cac_24m": 1.12, "ltv_to_cac_60m": 1.71, "ltv_to_cac_60m_lo": 1.65, "ltv_to_cac_60m_hi": 1.77, "payback_month": 21, "share_of_60m_ltv_beyond_month_24": 34.4}], "curves": {"referral": [9.84, 19.37, 28.61, 37.93, 47.06, 55.98, 64.73, 73.29, 81.71, 89.98, 98.08, 106.03, 113.93, 121.7, 129.37, 136.97, 144.49, 151.93, 159.27, 166.57, 173.72, 180.75, 187.73, 194.62, 201.45, 208.19, 214.86, 221.44, 227.94, 234.37, 240.72, 246.99, 253.19, 259.31, 265.35, 271.33, 277.23, 283.06, 288.82, 294.52, 300.14, 305.69, 311.18, 316.61, 321.96, 327.25, 332.48, 337.65, 342.75, 347.79, 352.77, 357.69, 362.56, 367.36, 372.1, 376.79, 381.42, 386.0, 390.52, 394.98], "partnership": [9.09, 17.81, 26.15, 34.61, 42.83, 50.86, 58.67, 66.31, 73.73, 81.0, 88.17, 95.12, 102.14, 109.03, 115.8, 122.48, 129.04, 135.49, 141.83, 148.07, 154.2, 160.18, 166.11, 172.0, 177.75, 183.41, 188.97, 194.44, 199.82, 205.12, 210.32, 215.44, 220.48, 225.44, 230.31, 235.1, 239.82, 244.45, 249.01, 253.5, 257.91, 262.25, 266.52, 270.72, 274.85, 278.91, 282.9, 286.83, 290.7, 294.5, 298.23, 301.91, 305.53, 309.09, 312.58, 316.03, 319.41, 322.74, 326.01, 329.24], "organic": [9.31, 18.09, 26.43, 34.8, 42.84, 50.58, 58.08, 65.34, 72.38, 79.18, 85.77, 92.14, 98.54, 104.82, 110.97, 116.99, 122.88, 128.62, 134.22, 139.69, 145.07, 150.34, 155.46, 160.45, 165.35, 170.15, 174.84, 179.43, 183.91, 188.3, 192.59, 196.79, 200.9, 204.91, 208.84, 212.68, 216.44, 220.11, 223.7, 227.22, 230.65, 234.02, 237.3, 240.52, 243.66, 246.74, 249.75, 252.69, 255.56, 258.38, 261.13, 263.82, 266.45, 269.03, 271.55, 274.01, 276.42, 278.77, 281.08, 283.33], "paid_search": [8.58, 16.64, 24.18, 31.82, 39.13, 46.12, 52.81, 59.25, 65.45, 71.44, 77.23, 82.83, 88.53, 94.1, 99.56, 104.87, 110.03, 115.0, 119.84, 124.59, 129.23, 133.74, 138.17, 142.47, 146.65, 150.73, 154.7, 158.57, 162.34, 166.01, 169.59, 173.08, 176.48, 179.79, 183.02, 186.17, 189.24, 192.23, 195.14, 197.98, 200.74, 203.44, 206.07, 208.63, 211.12, 213.55, 215.92, 218.23, 220.48, 222.68, 224.81, 226.9, 228.93, 230.9, 232.83, 234.71, 236.54, 238.33, 240.06, 241.76], "paid_social": [8.01, 15.28, 21.94, 28.63, 34.91, 40.78, 46.32, 51.58, 56.55, 61.25, 65.73, 70.01, 74.41, 78.64, 82.74, 86.72, 90.56, 94.28, 97.87, 101.34, 104.71, 107.94, 111.06, 114.06, 116.94, 119.72, 122.41, 125.0, 127.5, 129.92, 132.25, 134.5, 136.67, 138.77, 140.79, 142.74, 144.63, 146.45, 148.21, 149.91, 151.54, 153.13, 154.65, 156.13, 157.55, 158.92, 160.25, 161.53, 162.76, 163.95, 165.11, 166.22, 167.29, 168.33, 169.32, 170.29, 171.22, 172.12, 172.99, 173.83], "month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]}};
+</script>
+<script>
+(function(){
+const D = DATA;
+const $ = (s,r=document)=>r.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+const CH = {organic:'var(--s1)', paid_social:'var(--s2)', referral:'var(--s3)', paid_search:'var(--s4)', partnership:'var(--s5)'};
+const CHORDER=['referral','partnership','organic','paid_search','paid_social'];
+const label = s=>s.replace('_',' ');
+const fmtMoney=(v,d=0)=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtK=v=>Math.abs(v)>=1000?(v<0?'-':'')+'$'+(Math.abs(v)/1000).toFixed(Math.abs(v)>=100000?0:1)+'K':fmtMoney(v);
+const mlabel = m=>{const d=new Date(m+'T00:00:00');return d.toLocaleString('en-US',{month:'short',year:'numeric'});};
+const tip=$('#tip');
+function el(n,a={},p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+function showTip(html,x,y){tip.innerHTML=html;tip.style.display='block';const w=tip.offsetWidth,h=tip.offsetHeight;
+  let l=x+14,t=y+14;if(l+w>innerWidth-8)l=x-w-14;if(t+h>innerHeight-8)t=y-h-14;tip.style.left=Math.max(8,l)+'px';tip.style.top=Math.max(8,t)+'px';}
+function hideTip(){tip.style.display='none';}
+function tipRow(color,k,v){return `<div class="r"><span class="k"><i class="sw" style="background:${color}"></i>${k}</span><b>${v}</b></div>`;}
+
+/* niceness */
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));const f=v/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;}
+function axis(min,max,n=4){const raw=(max-min)/n||1;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;
+  const st=(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;const lo=Math.floor(min/st+1e-9)*st,hi=Math.ceil(max/st-1e-9)*st;const t=[];for(let v=lo;v<=hi+st*1e-6;v+=st)t.push(+v.toFixed(6));return {lo,hi,t};}
+function ticks(min,max,n=5){const out=[];const step=(max-min)/n;for(let i=0;i<=n;i++)out.push(min+step*i);return out;}
+
+/* table twin */
+function twin(card, cols, rows){
+  let d=card.querySelector('details.twin'); if(d)d.remove();
+  d=document.createElement('details');d.className='twin';
+  d.innerHTML='<summary>View as table</summary><div class="tablewrap"><table><thead><tr>'+cols.map(c=>'<th scope="col">'+c+'</th>').join('')+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+  card.appendChild(d);
+}
+
+/* generic line chart. cfg: x[], series[{name,color,values,dash}], yfmt, ymin, ymax, ann[{i,text,dy}], xlab(i), tipTitle(i), tipVal(v) */
+function lineChart(host,cfg){
+  host.innerHTML='';
+  const W=Math.max(host.clientWidth,280), H=Math.min(340,Math.max(240,W*0.5));
+  const m={t:12,r:cfg.endLabels?88:16,b:30,l:48};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:W,height:H,class:'focusable',tabindex:0,role:'img','aria-label':cfg.aria},host);
+  const n=cfg.x.length;
+  const dmax=Math.max(...cfg.series.flatMap(s=>s.values.filter(v=>v!=null)));
+  const ax=axis(cfg.ymin??0, cfg.ymax??dmax*1.04, 4); let ymin=ax.lo, ymax=ax.hi;
+  const X=i=>m.l+(W-m.l-m.r)*(n===1?0.5:i/(n-1)), Y=v=>m.t+(H-m.t-m.b)*(1-(v-ymin)/(ymax-ymin));
+  ax.t.forEach(t=>{el('line',{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),class:'gridline'},svg);
+    const tx=el('text',{x:m.l-8,y:Y(t)+4,'text-anchor':'end',class:'tick'},svg);tx.textContent=cfg.yfmt(t);});
+  el('line',{x1:m.l,x2:W-m.r,y1:Y(ymin),y2:Y(ymin),class:'axisline'},svg);
+  const step=Math.max(1,Math.ceil(n/(W<500?4:8)));
+  for(let i=0;i<n;i+=step){const tx=el('text',{x:X(i),y:H-8,'text-anchor':'middle',class:'tick'},svg);tx.textContent=cfg.xlab(i);}
+  (cfg.ann||[]).forEach(a=>{el('line',{x1:X(a.i),x2:X(a.i),y1:m.t,y2:Y(ymin),class:'refline'},svg);
+    const t=el('text',{x:X(a.i)+(a.left?-6:6),y:m.t+12+(a.dy||0),class:'ann','text-anchor':a.left?'end':'start'},svg);t.textContent=a.text;});
+  cfg.series.forEach(s=>{
+    let d='';s.values.forEach((v,i)=>{if(v==null)return;d+=(d?'L':'M')+X(i)+' '+Y(v);});
+    el('path',{d,fill:'none',style:`stroke:${s.color};stroke-width:2;stroke-linecap:round;stroke-linejoin:round`+(s.dash?';stroke-dasharray:5 4':'')},svg);
+    if(cfg.endLabels){let last=s.values.length-1;while(last>0&&s.values[last]==null)last--;
+      const t=el('text',{x:X(last)+8,y:Y(s.values[last])+4,class:'lbl'},svg);t.textContent=s.name;}
+  });
+  const cross=el('line',{y1:m.t,y2:Y(ymin),class:'cross',style:'display:none'},svg);
+  const dots=cfg.series.map(s=>el('circle',{r:4,class:'dot',style:`fill:${s.color};display:none`},svg));
+  let cur=-1;
+  function show(i,cx,cy){cur=i;cross.setAttribute('x1',X(i));cross.setAttribute('x2',X(i));cross.style.display='';
+    let rows='';cfg.series.forEach((s,k)=>{const v=s.values[i];if(v==null){dots[k].style.display='none';return;}
+      dots[k].setAttribute('cx',X(i));dots[k].setAttribute('cy',Y(v));dots[k].style.display='';rows+=tipRow(s.color,s.name,cfg.yfmt(v,true));});
+    const r=svg.getBoundingClientRect();showTip(`<div class="t">${cfg.tipTitle(i)}</div>`+rows,cx??r.left+X(i),cy??r.top+m.t+20);}
+  function hide(){cross.style.display='none';dots.forEach(d=>d.style.display='none');hideTip();cur=-1;}
+  svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect();const px=(e.clientX-r.left)*(W/r.width);
+    const i=Math.round(((px-m.l)/(W-m.l-m.r))*(n-1));if(i>=0&&i<n)show(i,e.clientX,e.clientY);});
+  svg.addEventListener('pointerleave',hide);svg.addEventListener('blur',hide);
+  svg.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const i=Math.min(n-1,Math.max(0,(cur<0?0:cur)+(e.key==='ArrowRight'?1:-1)));show(i);}
+    if(e.key==='Escape')hide();});
+}
+
+/* horizontal bar chart. rows:[{name,value,color,txt,tipHtml}] */
+function barChart(host,cfg){
+  host.innerHTML='';
+  const W=Math.max(host.clientWidth,280), rowH=cfg.rowH||40, m={t:8,r:16,b:28,l:cfg.left||110}; const H=m.t+m.b+rowH*cfg.rows.length;
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:W,height:H,role:'img','aria-label':cfg.aria},host);
+  const dlo=Math.min(0,...cfg.rows.map(r=>r.value)), dhi=Math.max(cfg.min||0,...cfg.rows.map(r=>r.value));
+  const padL=dlo<0?(dhi-dlo)*(W<500?0.24:0.16):0, padR=(dhi-dlo)*0.14;   // room for value labels outside the bars
+  const bx=axis(dlo<0?dlo-padL:0, dhi+padR, 4); const lo=bx.lo, hi=bx.hi;
+  const X=v=>m.l+(W-m.l-m.r)*((v-lo)/(hi-lo));
+  const x0=X(0);
+  bx.t.forEach(t=>{el('line',{x1:X(t),x2:X(t),y1:m.t,y2:H-m.b,class:'gridline'},svg);
+    const tx=el('text',{x:X(t),y:H-8,'text-anchor':'middle',class:'tick'},svg);tx.textContent=cfg.xfmt(t);});
+  el('line',{x1:x0,x2:x0,y1:m.t,y2:H-m.b,class:'axisline'},svg);
+  cfg.rows.forEach((r,i)=>{const y=m.t+i*rowH, bh=Math.min(22,rowH-14), by=y+(rowH-bh)/2;
+    const x1=X(r.value), xa=Math.min(x0,x1), w=Math.max(2,Math.abs(x1-x0));
+    const lt=el('text',{x:m.l-8,y:by+bh/2+4,'text-anchor':'end',class:'lbl'},svg);lt.textContent=r.name;
+    el('rect',{x:xa,y:by,width:w,height:bh,rx:4,style:`fill:${r.color}`},svg);
+    const vt=el('text',{x:r.value>=0?x1+6:x1-6,y:by+bh/2+4,'text-anchor':r.value>=0?'start':'end',class:'val'},svg);vt.textContent=r.txt;
+    const hit=el('rect',{x:0,y:y,width:W,height:rowH,class:'hit',tabindex:0,role:'img','aria-label':r.aria||r.name+' '+r.txt},svg);
+    const on=e=>{const b=hit.getBoundingClientRect();showTip(r.tipHtml,e.clientX??b.left+b.width/2,e.clientY??b.top);};
+    hit.addEventListener('pointermove',on);hit.addEventListener('pointerleave',hideTip);hit.addEventListener('focus',e=>on({clientX:hit.getBoundingClientRect().left+m.l+30,clientY:hit.getBoundingClientRect().top}));hit.addEventListener('blur',hideTip);
+  });
+  (cfg.refs||[]).forEach(f=>{el('line',{x1:X(f.v),x2:X(f.v),y1:m.t,y2:H-m.b,class:'refline'},svg);});
+}
+
+/* grouped vertical bars */
+function groupedBars(host,cfg){
+  host.innerHTML='';
+  const W=Math.max(host.clientWidth,280),H=260,m={t:16,r:12,b:30,l:44};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:W,height:H,role:'img','aria-label':cfg.aria},host);
+  const gax=axis(0,Math.max(...cfg.series.flatMap(s=>s.values))*1.12,4);const ymax=gax.hi;
+  const Y=v=>m.t+(H-m.t-m.b)*(1-v/ymax);
+  gax.t.forEach(t=>{el('line',{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),class:'gridline'},svg);const tx=el('text',{x:m.l-8,y:Y(t)+4,'text-anchor':'end',class:'tick'},svg);tx.textContent=cfg.yfmt(t);});
+  el('line',{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),class:'axisline'},svg);
+  const n=cfg.x.length,gw=(W-m.l-m.r)/n, k=cfg.series.length, bw=Math.min(40,(gw-24)/k-2);
+  cfg.x.forEach((xl,i)=>{const gx=m.l+gw*i+gw/2;
+    const tx=el('text',{x:gx,y:H-8,'text-anchor':'middle',class:'tick'},svg);tx.textContent=xl;
+    cfg.series.forEach((s,j)=>{const bx=gx-(k*bw+(k-1)*2)/2+j*(bw+2),v=s.values[i];
+      el('path',{d:`M${bx} ${Y(0)}V${Y(v)+4}Q${bx} ${Y(v)} ${bx+4} ${Y(v)}H${bx+bw-4}Q${bx+bw} ${Y(v)} ${bx+bw} ${Y(v)+4}V${Y(0)}Z`,style:`fill:${s.color}`},svg);
+      const vt=el('text',{x:bx+bw/2,y:Y(v)-5,'text-anchor':'middle',class:'val'},svg);vt.textContent=cfg.yfmt(v,true);});
+    const hit=el('rect',{x:m.l+gw*i,y:m.t,width:gw,height:H-m.t-m.b,class:'hit',tabindex:0,role:'img','aria-label':xl+': '+cfg.series.map(s=>s.name+' '+cfg.yfmt(s.values[i],true)).join(', ')},svg);
+    const on=e=>{const b=hit.getBoundingClientRect();showTip(`<div class="t">${xl}</div>`+cfg.series.map(s=>tipRow(s.color,s.name,cfg.yfmt(s.values[i],true))).join(''),e.clientX??b.left+b.width/2,e.clientY??b.top);};
+    hit.addEventListener('pointermove',on);hit.addEventListener('pointerleave',hideTip);hit.addEventListener('focus',()=>on({clientX:hit.getBoundingClientRect().left+gw/2,clientY:hit.getBoundingClientRect().top+20}));hit.addEventListener('blur',hideTip);});
+}
+function legend(host,items){host.innerHTML=items.map(i=>`<span><i style="background:${i.color}"></i>${i.name}</span>`).join('');}
+function seg(host,opts,cur,cb){host.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.type='button';b.textContent=o.label;b.setAttribute('aria-pressed',o.id===cur);
+  b.onclick=()=>{[...host.children].forEach(c=>c.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');cb(o.id);};host.appendChild(b);});}
+
+/* ---------- headline ---------- */
+const M=D.mrr, last=M.month.length-1;
+$('#heroMrr').textContent=fmtMoney(M.mrr[last]);
+$('#heroSub').textContent=`Up from ${fmtMoney(M.mrr[0])} in Jan 2023. Revenue per paying customer ${fmtMoney(M.arpu_paying[last],2)}.`;
+$('#tCust').textContent=M.customers_subscribed[last].toLocaleString('en-US');
+$('#tNrr').textContent=D.nrr.nrr_pct[D.nrr.nrr_pct.length-1].toFixed(1)+'%';
+$('#tChurn').textContent=D.churn_month.logo_churn_pct[D.churn_month.logo_churn_pct.length-1].toFixed(2)+'%';
+const L={};D.ltv.forEach(r=>L[r.channel]=r);
+$('#f1n').textContent=L.paid_social.ltv_to_cac_60m.toFixed(1)+'x';
+$('#f1p').textContent=`60-month LTV:CAC for paid social, with CAC of ${fmtMoney(L.paid_social.cac)} and only ${(D.km.channel.paid_social[12]*100).toFixed(0)}% of customers left after 12 months. Referral is ${L.referral.ltv_to_cac_60m.toFixed(1)}x.`;
+const mx=D.mix;
+$('#f2n').textContent=mx.blended_churn_pct[2].toFixed(2)+'% vs '+mx.churn_pct_at_2023_mix[2].toFixed(2)+'%';
+$('#f2p').textContent=`2025 churn as reported, against 2025 churn at the 2023 channel mix. From 2024 to 2025 the mix-adjusted rate rose slightly (${mx.churn_pct_at_2023_mix[1].toFixed(2)}% to ${mx.churn_pct_at_2023_mix[2].toFixed(2)}%).`;
+const P=D.price;
+const netPrice=P.price_gain_per_month[0]-P.mrr_lost_per_month_from_excess_churn[0];
+$('#f3n').textContent='+'+fmtMoney(netPrice)+'/mo';
+$('#f3p').textContent=`Price gain of ${fmtMoney(P.price_gain_per_month[0])}/month of MRR against ${fmtMoney(P.mrr_lost_per_month_from_excess_churn[0])}/month lost to about ${P.excess_cancels_3m[0]} extra cancellations. Excludes those customers' future value.`;
+
+/* ---------- charts ---------- */
+const state={bridge:'all',km:'channel',ltv:'60'};
+function drawMrr(){
+  const c=$('#c-mrr');
+  const ai=M.month.indexOf('2025-03-01');
+  lineChart($('.chart',c),{x:M.month,series:[{name:'MRR',color:'var(--s1)',values:M.mrr}],yfmt:(v)=>fmtK(v),ymin:0,
+    xlab:i=>{const l=mlabel(M.month[i]);return l.slice(0,3)+" '"+l.slice(-2);},tipTitle:i=>mlabel(M.month[i]),ann:[{i:ai,text:'Standard price rise',left:true}],aria:'Monthly recurring revenue over time'});
+  twin(c,['Month','MRR','Customers','Revenue per paying customer'],M.month.map((m,i)=>[mlabel(m),fmtMoney(M.mrr[i],0),M.customers_subscribed[i].toLocaleString('en-US'),fmtMoney(M.arpu_paying[i],2)]));
+}
+const CAUSES=[['new_mrr','New customers'],['upgrade','Upgrades'],['resume','Resumed'],['price_increase','Price increase'],['promo_rolloff','Promo roll-off'],['downgrade','Downgrades'],['pause','Pauses'],['churn','Cancels']];
+const W_LEFT=()=>innerWidth<500?84:120;
+function drawBridge(){
+  const c=$('#c-bridge'),B=D.bridge;
+  const idx=B.month.map((m,i)=>i).filter(i=>state.bridge==='all'||B.month[i].startsWith(state.bridge));
+  const rows=CAUSES.map(([k,name])=>{const v=idx.reduce((a,i)=>a+B[k][i],0);return {name,value:v,color:v>=0?'var(--s1)':'var(--s2)',txt:(v>=0?'+':'-')+fmtK(Math.abs(v)).replace('-',''),
+    tipHtml:`<div class="t">${name}</div>${tipRow(v>=0?'var(--s1)':'var(--s2)','Change in MRR',(v>=0?'+':'-')+fmtMoney(Math.abs(v)))}`,aria:`${name} ${v>=0?'adds':'removes'} ${fmtMoney(Math.abs(v))}`};});
+  barChart($('.chart',c),{rows,xfmt:v=>fmtK(v),left:W_LEFT(),aria:'MRR change by cause',rowH:36});
+  twin(c,['Cause','Change in MRR'],rows.map(r=>[r.name,(r.value>=0?'+':'-')+fmtMoney(Math.abs(r.value))]));
+}
+function drawKm(){
+  const c=$('#c-km');const g=state.km;const keys=g==='channel'?CHORDER:['Premium','Standard','Basic'];
+  const cols=g==='channel'?CH:{Premium:'var(--s3)',Standard:'var(--s2)',Basic:'var(--s1)'};
+  const ser=keys.map(k=>({name:label(k),color:cols[k],values:D.km[g][k].map(v=>v*100)}));
+  legend($('.legend',c),ser);
+  const n=Math.max(...ser.map(s=>s.values.length));
+  lineChart($('.chart',c),{x:[...Array(n).keys()],series:ser,yfmt:(v,t)=>v.toFixed(t?1:0)+'%',ymin:0,ymax:100,xlab:i=>i+'m',tipTitle:i=>'Month '+i+' since signup',aria:'Retention curves',endLabels:true});
+  twin(c,['Month',...ser.map(s=>s.name)],[0,3,6,12,18,24].map(i=>[i,...ser.map(s=>s.values[i]!=null?s.values[i].toFixed(1)+'%':'')]));
+}
+function drawLtv(){
+  const c=$('#c-ltv'),h=state.ltv;const key='ltv_to_cac_'+h+'m';
+  const rows=[...D.ltv].sort((a,b)=>b[key]-a[key]).map(r=>{const org=r.channel==='organic';return {name:label(r.channel)+(org?'*':''),value:r[key],color:org?'var(--gray-mark)':CH[r.channel],txt:r[key].toFixed(1)+'x'+(org?'*':''),
+    tipHtml:`<div class="t">${label(r.channel)}</div>${tipRow(CH[r.channel],'LTV:CAC ('+h+' mo)',r[key].toFixed(1)+'x')}${tipRow('transparent','CAC',fmtMoney(r.cac,2))}${tipRow('transparent','Gross profit per signup',fmtMoney(r['ltv_'+h+'m'],0))}`,aria:`${label(r.channel)} ${r[key].toFixed(1)} times`};});
+  barChart($('.chart',c),{rows,xfmt:v=>v.toFixed(0)+'x',left:100,min:3.5,refs:[{v:3}],aria:'LTV to CAC ratio by channel',rowH:44});
+  twin(c,['Channel','CAC','LTV:CAC'],rows.map(r=>[r.name,'',r.txt]).map((r,i)=>{const ch=[...D.ltv].sort((a,b)=>b[key]-a[key])[i];r[1]=fmtMoney(ch.cac,2);return r;}));
+}
+function drawTable(){
+  const host=$('#c-tbl .tablewrap');
+  const rows=CHORDER.map(k=>L[k]);
+  host.innerHTML='<table><thead><tr><th scope="col">Channel</th><th scope="col">CAC</th><th scope="col">12-mo retention</th><th scope="col">LTV 12 mo</th><th scope="col">LTV 24 mo</th><th scope="col">LTV 60 mo (90% interval)</th><th scope="col">LTV:CAC 60 mo</th><th scope="col">Payback (months)</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr><td>${label(r.channel)}</td><td>${fmtMoney(r.cac,2)}</td><td>${(D.km.channel[r.channel][12]*100).toFixed(1)}%</td><td>${fmtMoney(r.ltv_12m)}</td><td>${fmtMoney(r.ltv_24m)}</td><td>${fmtMoney(r.ltv_60m)} (${fmtMoney(r.ltv_60m_lo)} to ${fmtMoney(r.ltv_60m_hi)})</td><td>${r.ltv_to_cac_60m.toFixed(1)}x${r.channel==='organic'?'*':''}</td><td>${r.payback_month}</td></tr>`).join('')+'</tbody></table>';
+}
+function drawHazard(){
+  const c=$('#c-hazard'),T=D.churn_tenure;
+  lineChart($('.chart',c),{x:T.tenure_month,series:[{name:'Churn',color:'var(--s1)',values:T.churn_pct}],yfmt:(v,t)=>v.toFixed(t?2:0)+'%',ymin:0,xlab:i=>T.tenure_month[i],
+    tipTitle:i=>'Tenure month '+T.tenure_month[i],ann:[{i:T.tenure_month.indexOf(13),text:'Drops after month 12',dy:20}],aria:'Churn by tenure month'});
+  twin(c,['Tenure month','At risk','Cancels','Churn'],T.tenure_month.map((t,i)=>[t,T.at_risk[i].toLocaleString('en-US'),T.cancels[i].toLocaleString('en-US'),T.churn_pct[i]+'%']));
+}
+function drawMix(){
+  const c=$('#c-mix');const s=[{name:'Blended',color:'var(--s1)',values:mx.blended_churn_pct},{name:'At 2023 channel mix',color:'var(--s2)',values:mx.churn_pct_at_2023_mix}];
+  legend($('.legend',c),[{name:'Blended',color:'var(--s1)'},{name:'At 2023 channel mix',color:'var(--s2)'}]);
+  groupedBars($('.chart',c),{x:mx.yr.map(String),series:s,yfmt:(v,t)=>v.toFixed(t?2:0)+'%',aria:'Blended versus mix-adjusted churn'});
+  twin(c,['Year','Blended','At 2023 mix'],mx.yr.map((y,i)=>[y,mx.blended_churn_pct[i]+'%',mx.churn_pct_at_2023_mix[i]+'%']));
+}
+function drawPromo(){
+  const c=$('#c-promo'),p=D.promo;
+  legend($('.legend',c),[{name:'Promo signups',color:'var(--s2)'},{name:'Other signups',color:'var(--s1)'}]);
+  lineChart($('.chart',c),{x:p.tenure_month,series:[{name:'Promo',color:'var(--s2)',values:p.promo_churn_pct},{name:'Other',color:'var(--s1)',values:p.non_promo_churn_pct}],
+    yfmt:(v,t)=>v.toFixed(t?1:0)+'%',ymin:0,xlab:i=>p.tenure_month[i],tipTitle:i=>'Tenure month '+p.tenure_month[i],aria:'Churn by tenure for promo and other signups'});
+  twin(c,['Tenure month','Promo','Other'],p.tenure_month.map((t,i)=>[t,p.promo_churn_pct[i]+'%',p.non_promo_churn_pct[i]+'%']));
+}
+function drawPrice(){
+  const c=$('#c-price'),S=D.std;const ai=S.month.indexOf('2025-03-01');
+  lineChart($('.chart',c),{x:S.month,series:[{name:'Standard churn',color:'var(--s1)',values:S.std_churn_pct}],yfmt:(v,t)=>v.toFixed(t?2:0)+'%',ymin:0,
+    xlab:i=>mlabel(S.month[i]).split(' ')[0]+" '"+mlabel(S.month[i]).slice(-2),tipTitle:i=>mlabel(S.month[i]),ann:[{i:ai,text:'Price rise to $15.99',left:true}],aria:'Standard plan monthly churn'});
+  $('#priceNote').textContent=`Churn averaged ${P.baseline_churn_pct[0]}% before the rise and ${P.post_rise_churn_pct[0]}% in March to May, about ${P.excess_cancels_3m[0]} extra cancellations, then returned to about 3%.`;
+  twin(c,['Month','Standard churn','Downgrades'],S.month.map((m,i)=>[mlabel(m),S.std_churn_pct[i]+'%',S.std_downgrade_pct[i]+'%']));
+}
+function drawAll(){drawMrr();drawBridge();drawKm();drawLtv();drawHazard();drawMix();drawPromo();drawPrice();}
+seg($('#bridgeSeg'),[{id:'all',label:'All'},{id:'2023',label:'2023'},{id:'2024',label:'2024'},{id:'2025',label:'2025'}],'all',v=>{state.bridge=v;drawBridge();});
+seg($('#kmSeg'),[{id:'channel',label:'Channel'},{id:'plan',label:'Plan'}],'channel',v=>{state.km=v;drawKm();});
+seg($('#ltvSeg'),[{id:'12',label:'12 mo'},{id:'24',label:'24 mo'},{id:'60',label:'60 mo'}],'60',v=>{state.ltv=v;drawLtv();});
+drawTable();drawAll();
+let lastW=innerWidth;let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(Math.abs(innerWidth-lastW)>0||true){lastW=innerWidth;drawAll();}},120);}).observe(document.body);
+const tb=$('#themeBtn');tb.onclick=()=>{const dark=document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme=dark?'light':'dark';tb.setAttribute('aria-pressed',String(!dark));drawAll();};
+})();
+</script>
+</body>
+</html>

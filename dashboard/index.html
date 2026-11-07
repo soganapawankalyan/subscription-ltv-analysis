@@ -6,25 +6,18 @@
 <title>Subscription Revenue, Churn and LTV | Synthetic Data Dashboard</title>
 <style>
   :root {
-    color-scheme: light;
-    --page:#f9f9f7; --surface:#fcfcfb; --ink-1:#0b0b0b; --ink-2:#52514e; --muted:#898781;
-    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.06);
-    --focus:#2a78d6;
-    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --gray-mark:#898781;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:where(:not([data-theme="light"])) {
-      color-scheme: dark;
-      --page:#0d0d0d; --surface:#1a1a19; --ink-1:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
-      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --hover:rgba(255,255,255,0.07);
-      --focus:#6da7ec; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
-    }
-  }
-  :root[data-theme="dark"] {
     color-scheme: dark;
-    --page:#0d0d0d; --surface:#1a1a19; --ink-1:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
-    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --hover:rgba(255,255,255,0.07);
-    --focus:#6da7ec; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    --page:#0f0f10; --surface:#1b1b1d; --surface-2:#242427; --ink-1:#f5f5f3; --ink-2:#c9c8c2; --muted:#8e8d86;
+    --grid:#2e2e31; --axis:#3d3d41; --border:rgba(255,255,255,0.10); --hover:rgba(255,255,255,0.08);
+    --focus:#7db3f0; --accent:#d32030; --accent-ink:#ff6b78;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --gray-mark:#8e8d86;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page:#f6f5f2; --surface:#ffffff; --surface-2:#f0efeb; --ink-1:#0b0b0b; --ink-2:#52514e; --muted:#6b6a65;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.06);
+    --focus:#2a78d6; --accent:#c41828; --accent-ink:#b3131f;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --gray-mark:#898781;
   }
 
   * { box-sizing: border-box; }
@@ -125,49 +118,134 @@
   footer { margin-top:32px; color:var(--ink-2); font-size:.8125rem; }
   footer p + p { margin-top:8px; }
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+  /* ---------- streaming-style shell ---------- */
+  body { background:var(--page); }
+  .nav { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:20px; padding:10px 24px;
+         background:linear-gradient(180deg,rgba(0,0,0,.85),rgba(0,0,0,.55)); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  :root[data-theme="light"] .nav { background:rgba(246,245,242,.92); }
+  .brand { color:var(--accent-ink); font-weight:800; letter-spacing:.14em; font-size:1.15rem; text-decoration:none; white-space:nowrap; }
+  .brand span { color:var(--ink-2); font-weight:500; letter-spacing:.04em; font-size:.8125rem; margin-left:8px; }
+  .nav .links { display:flex; gap:4px; flex:1; overflow-x:auto; scrollbar-width:none; }
+  .nav .links::-webkit-scrollbar { display:none; }
+  .nav .links a { color:var(--ink-2); text-decoration:none; font-size:.875rem; padding:8px 12px; border-radius:6px; white-space:nowrap; min-height:36px; display:inline-flex; align-items:center; }
+  .nav .links a:hover { color:var(--ink-1); background:var(--hover); }
+  @media (pointer:coarse) { .nav .links a { min-height:44px; } }
+  @media (max-width:640px) { .brand span { display:none; } .nav { padding:8px 12px; gap:8px; } }
+
+  .billboard { position:relative; overflow:hidden; min-height:440px; display:flex; align-items:flex-end;
+               background:radial-gradient(70% 90% at 85% 0%,rgba(211,32,48,.38),transparent 70%),radial-gradient(50% 60% at 0% 100%,rgba(57,135,229,.18),transparent 70%),var(--page); }
+  :root[data-theme="light"] .billboard { background:radial-gradient(70% 90% at 85% 0%,rgba(196,24,40,.16),transparent 70%),var(--page); }
+  .billboard svg.spark { position:absolute; left:0; right:0; bottom:0; width:100%; height:78%; opacity:.9; pointer-events:none; }
+  .billboard::after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,var(--page) 0%,transparent 38%),linear-gradient(90deg,var(--page) 0%,transparent 55%); pointer-events:none; }
+  .bb-inner { position:relative; z-index:1; width:100%; max-width:1180px; margin:0 auto; padding:56px 24px 40px; }
+  .badge { display:inline-block; font-size:.75rem; font-weight:700; letter-spacing:.12em; padding:4px 10px; border:1px solid var(--accent-ink); color:var(--accent-ink); border-radius:4px; }
+  .billboard h1 { font-size:clamp(2rem,5.5vw,3.5rem); line-height:1.05; font-weight:800; letter-spacing:-.02em; margin-top:14px; max-width:16ch; }
+  .billboard .lede { color:var(--ink-2); margin-top:12px; max-width:56ch; font-size:1.0625rem; }
+  .bb-mrr { margin-top:20px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .bb-mrr .big { font-size:clamp(2.25rem,6vw,3.5rem); font-weight:800; letter-spacing:-.02em; line-height:1; }
+  .bb-mrr .small { color:var(--ink-2); font-size:.9375rem; }
+  .bb-actions { margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; }
+  .btn { min-height:44px; padding:0 22px; border-radius:6px; font-weight:650; font-size:1rem; text-decoration:none; display:inline-flex; align-items:center; border:1px solid var(--border); background:rgba(255,255,255,.14); color:var(--ink-1); }
+  :root[data-theme="light"] .btn { background:var(--surface-2); }
+  .btn:hover { background:rgba(255,255,255,.22); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.primary:hover { background:#e42a3b; }
+  .chips { margin-top:24px; display:flex; gap:12px; flex-wrap:wrap; }
+  .chip { padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,.35); min-width:120px; }
+  :root[data-theme="light"] .chip { background:rgba(255,255,255,.7); }
+  .chip .label { color:var(--ink-2); font-size:.75rem; }
+  .chip .value { font-size:1.375rem; font-weight:700; line-height:1.25; }
+
+  @media (max-width:640px) { .chips { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .chip { min-width:0; } .btn { flex:1; justify-content:center; } .poster { width:290px; } }
+  .wrap { padding-top:8px; }
+  .rail-sec { margin-top:28px; }
+  .rail-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .rail-head h2 { font-size:1.25rem; font-weight:700; }
+  .rail-head p { color:var(--ink-2); font-size:.875rem; margin-top:2px; }
+  .rail-ctl { display:flex; gap:8px; }
+  .rail-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--surface); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:var(--ink-1); }
+  .rail-btn:hover { background:var(--surface-2); }
+  @media (pointer:coarse) { .rail-btn { display:none; } }
+  .rail { margin-top:12px; display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x proximity; padding:10px 4px 18px; margin-left:-4px; margin-right:-4px; scrollbar-width:thin; }
+  .rail > * { scroll-snap-align:start; flex:none; }
+  .poster { width:330px; min-height:230px; padding:18px 20px; border-radius:10px; background:linear-gradient(160deg,var(--surface-2),var(--surface)); border:1px solid var(--border); border-top:3px solid var(--tone,var(--accent)); transition:transform .18s ease, box-shadow .18s ease; }
+  .poster:hover,.poster:focus-visible { transform:translateY(-4px) scale(1.025); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+  .poster .n { font-size:1.875rem; line-height:1.1; font-weight:800; }
+  .poster h3 { font-size:.9375rem; font-weight:650; margin-top:6px; }
+  .poster p { color:var(--ink-2); font-size:.875rem; margin-top:4px; }
+  .poster .act { margin-top:10px; font-size:.875rem; }
+  .poster .act b { font-weight:650; }
+  .rank { width:250px; min-height:230px; display:flex; gap:0; align-items:stretch; border-radius:10px; background:linear-gradient(160deg,var(--surface-2),var(--surface)); border:1px solid var(--border); overflow:hidden; transition:transform .18s ease, box-shadow .18s ease; }
+  .rank:hover,.rank:focus-visible { transform:translateY(-4px) scale(1.03); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+  .rank .num { flex:none; width:84px; display:flex; align-items:center; justify-content:center; font-size:7rem; font-weight:800; line-height:1; letter-spacing:-.06em; color:transparent; -webkit-text-stroke:3px var(--tone); padding-left:2px; }
+  .rank .body { padding:16px 14px 16px 6px; min-width:0; }
+  .rank h3 { font-size:1rem; font-weight:700; text-transform:capitalize; }
+  .rank .ltv { font-size:1.5rem; font-weight:800; margin-top:6px; line-height:1.1; }
+  .rank .sub { color:var(--ink-2); font-size:.75rem; }
+  .rank dl { margin:10px 0 0; display:grid; grid-template-columns:1fr auto; gap:4px 10px; font-size:.8125rem; }
+  .rank dt { color:var(--ink-2); } .rank dd { margin:0; font-weight:600; text-align:right; }
+  .rank .flag { margin-top:8px; font-size:.75rem; color:var(--ink-2); }
+  .action { width:280px; min-height:170px; padding:16px 18px; border-radius:10px; background:linear-gradient(160deg,var(--surface-2),var(--surface)); border:1px solid var(--border); transition:transform .18s ease, box-shadow .18s ease; }
+  .action:hover,.action:focus-visible { transform:translateY(-4px) scale(1.025); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+  .action .k { font-size:2rem; font-weight:800; color:var(--accent-ink); line-height:1; }
+  .action h3 { font-size:.9375rem; font-weight:650; margin-top:8px; }
+  .action p { color:var(--ink-2); font-size:.8125rem; margin-top:4px; }
+  .notice { margin-top:12px; }
+  h2.section { margin-top:36px; font-size:1.25rem; font-weight:700; }
+  .card { background:var(--surface); }
+  footer { scroll-margin-top:60px; }
+  h2.section, .rail-sec { scroll-margin-top:60px; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Subscription Revenue, Churn and LTV</h1>
-      <p class="lede">A synthetic streaming-style subscription business, January 2023 to December 2025. Which customers are worth acquiring, and what did a price rise and a promotion really do?</p>
+<nav class="nav" aria-label="Sections">
+  <a class="brand" href="#top">STREAMBOX<span>analytics</span></a>
+  <div class="links"><a href="#findings">Findings</a><a href="#channels">Channels</a><a href="#revenue">Revenue</a><a href="#retention">Retention</a><a href="#churn">Churn</a><a href="#actions">Actions</a><a href="#method">Method</a></div>
+  <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false">Light mode</button>
+</nav>
+<header class="billboard" id="top">
+  <svg class="spark" id="bgSpark" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div class="bb-inner">
+    <span class="badge">SYNTHETIC DATA &middot; 25,000 CUSTOMERS &middot; 36 MONTHS</span>
+    <h1>Which subscribers are worth acquiring?</h1>
+    <p class="lede">Revenue, churn and lifetime value for a streaming-style subscription business: where the growth comes from, which channels pay back, and what a price rise and a promotion really did.</p>
+    <div class="bb-mrr"><span class="big" id="heroMrr"></span><span class="small">monthly recurring revenue, Dec 2025</span></div>
+    <div class="bb-actions"><a class="btn primary" href="#findings">Explore findings</a><a class="btn" href="#method">How it was built</a></div>
+    <div class="chips">
+      <div class="chip"><div class="label">Customers subscribed</div><div class="value" id="tCust"></div></div>
+      <div class="chip"><div class="label">12-month net revenue retention</div><div class="value" id="tNrr"></div></div>
+      <div class="chip"><div class="label">Monthly logo churn</div><div class="value" id="tChurn"></div></div>
+      <div class="chip"><div class="label">Revenue per paying customer</div><div class="value" id="tArpu"></div></div>
     </div>
-    <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false">Toggle dark mode</button>
-  </header>
+    <span class="sr-only" id="heroSub"></span>
+  </div>
+</header>
+<div class="wrap">
   <div class="notice"><b>Synthetic data.</b> The company and all numbers are generated for this portfolio project. Real subscription businesses are inspiration only; no real company's data or decisions are represented. Several patterns (promo cliff, price-rise response, channel quality) were built into the generator on purpose.</div>
 
-  <section class="hero" aria-label="Headline numbers">
-    <div class="card hero-fig">
-      <div class="label">Monthly recurring revenue, Dec 2025</div>
-      <div class="big" id="heroMrr"></div>
-      <div class="small" id="heroSub"></div>
-    </div>
-    <div class="tiles">
-      <div class="card tile"><div class="label">Customers subscribed</div><div class="value" id="tCust"></div><div class="hint">Dec 2025</div></div>
-      <div class="card tile"><div class="label">12-month net revenue retention</div><div class="value" id="tNrr"></div><div class="hint">Below 100%: existing customers shrink</div></div>
-      <div class="card tile"><div class="label">Monthly logo churn</div><div class="value" id="tChurn"></div><div class="hint">Dec 2025</div></div>
+  <section class="rail-sec" id="findings" aria-label="Key findings">
+    <div class="rail-head"><div><h2>Key findings</h2><p>Three things the data says, and what to do about each</p></div><div class="rail-ctl"><button class="rail-btn" type="button" data-dir="-1" aria-label="Scroll findings left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="rail-btn" type="button" data-dir="1" aria-label="Scroll findings right"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+    <div class="rail" tabindex="0" role="list" aria-label="Key findings">
+      <article class="poster" role="listitem" style="--tone:var(--s2)"><div class="n" id="f1n"></div><h3>Paid social does not earn back its cost</h3><p id="f1p"></p><div class="act"><b>Do:</b> move budget toward referral and partnership; test on a capped budget first.</div></article>
+      <article class="poster" role="listitem" style="--tone:var(--s1)"><div class="n" id="f2n"></div><h3>Falling churn is mostly mix shift</h3><p id="f2p"></p><div class="act"><b>Do:</b> track churn within each channel, not only the blended rate.</div></article>
+      <article class="poster" role="listitem" style="--tone:var(--s3)"><div class="n" id="f3n"></div><h3>The price rise paid off, with a cost</h3><p id="f3p"></p><div class="act"><b>Do:</b> stage future rises and pair them with a retention offer.</div></article>
     </div>
   </section>
 
-  <section class="findings" aria-label="Key findings">
-    <div class="card finding"><div class="n" id="f1n"></div><h3>Paid social does not earn back its cost</h3>
-      <p id="f1p"></p><div class="act"><b>Do:</b> move budget toward referral and partnership; test the shift on a capped budget first.</div></div>
-    <div class="card finding"><div class="n" id="f2n"></div><h3>Falling churn is mostly mix shift</h3>
-      <p id="f2p"></p><div class="act"><b>Do:</b> track churn within each channel, not only the blended rate.</div></div>
-    <div class="card finding"><div class="n" id="f3n"></div><h3>The price rise paid off, with a cost</h3>
-      <p id="f3p"></p><div class="act"><b>Do:</b> stage future rises and pair them with a retention offer.</div></div>
+  <section class="rail-sec" id="channels" aria-label="Channels ranked">
+    <div class="rail-head"><div><h2>Top channels by lifetime profit</h2><p>Ranked by projected 60-month gross profit per customer (70% margin assumed)</p></div><div class="rail-ctl"><button class="rail-btn" type="button" data-dir="-1" aria-label="Scroll channels left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="rail-btn" type="button" data-dir="1" aria-label="Scroll channels right"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+    <div class="rail" id="chRail" tabindex="0" role="list" aria-label="Channels ranked by projected lifetime profit"></div>
   </section>
 
-  <h2 class="section">Revenue</h2>
+  <h2 class="section" id="revenue">Revenue</h2>
   <div class="grid">
     <div class="card span2" id="c-mrr"><div class="card-head"><div><h2>MRR over time</h2><p class="sub">Monthly recurring revenue across all plans</p></div></div><div class="chart"></div><div class="note">Net revenue retention stays below 100% every month: growth comes from new signups, not from the existing base.</div></div>
     <div class="card span2" id="c-bridge"><div class="card-head"><div><h2>Where MRR moved, by cause</h2><p class="sub">Total change in MRR for the period; blue adds revenue, orange removes it</p></div>
       <div class="seg" id="bridgeSeg" role="group" aria-label="Period"></div></div><div class="chart"></div></div>
   </div>
 
-  <h2 class="section">Retention and customer value</h2>
+  <h2 class="section" id="retention">Retention and customer value</h2>
   <div class="grid">
     <div class="card" id="c-km"><div class="card-head"><div><h2>Share of customers still subscribed</h2><p class="sub">Kaplan-Meier survival, by months since signup</p></div>
       <div class="seg" id="kmSeg" role="group" aria-label="Group by"></div></div><div class="legend"></div><div class="chart"></div></div>
@@ -177,7 +255,7 @@
     <div class="card span2" id="c-tbl"><div class="card-head"><div><h2>Acquisition economics by channel</h2><p class="sub">70% gross margin assumed; 60-month figures extrapolate beyond month 24</p></div></div><div class="tablewrap"></div></div>
   </div>
 
-  <h2 class="section">What changed churn</h2>
+  <h2 class="section" id="churn">What changed churn</h2>
   <div class="grid">
     <div class="card" id="c-hazard"><div class="card-head"><div><h2>Churn is highest early</h2><p class="sub">Chance of cancelling in each month of tenure</p></div></div><div class="chart"></div></div>
     <div class="card" id="c-mix"><div class="card-head"><div><h2>Blended vs mix-adjusted churn</h2><p class="sub">Monthly churn by year; adjusted holds the 2023 channel mix fixed</p></div></div><div class="legend"></div><div class="chart"></div>
@@ -188,18 +266,12 @@
       <div class="note" id="priceNote"></div></div>
   </div>
 
-  <h2 class="section">Recommendations</h2>
-  <div class="card" style="margin-top:12px">
-    <ol class="recs">
-      <li><b>Shift budget from paid social to referral and partnership.</b> <span>Referral returns roughly nine times more lifetime profit per dollar. Test with a capped change.</span></li>
-      <li><b>Rework the promotion.</b> <span>A 50% discount that only delays cancellation costs revenue. Test a smaller or stepped discount.</span></li>
-      <li><b>Pair price rises with a retention offer.</b> <span>The rise was net positive, but churn and downgrades spiked for three months.</span></li>
-      <li><b>Invest in the first 90 days.</b> <span>Churn is highest in months 2 and 3, so onboarding is the cheapest place to improve retention.</span></li>
-      <li><b>Test an early-upgrade nudge.</b> <span>Customers who upgrade early retain better (77.8% vs 65.3%, n = 288), but engaged customers may simply be the ones who upgrade.</span></li>
-    </ol>
-  </div>
+  <section class="rail-sec" id="actions" aria-label="Recommendations">
+    <div class="rail-head"><div><h2>What to do next</h2><p>Five recommendations, in priority order</p></div><div class="rail-ctl"><button class="rail-btn" type="button" data-dir="-1" aria-label="Scroll recommendations left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="rail-btn" type="button" data-dir="1" aria-label="Scroll recommendations right"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+    <div class="rail" tabindex="0" role="list" aria-label="Recommendations"><article class="action" role="listitem"><div class="k">1</div><h3>Shift budget to referral and partnership</h3><p>Referral returns roughly nine times more lifetime profit per dollar than paid social. Test with a capped change.</p></article><article class="action" role="listitem"><div class="k">2</div><h3>Rework the promotion</h3><p>A 50% discount that only delays cancellation costs revenue. Test a smaller or stepped discount.</p></article><article class="action" role="listitem"><div class="k">3</div><h3>Pair price rises with a retention offer</h3><p>The rise was net positive, but churn and downgrades spiked for three months.</p></article><article class="action" role="listitem"><div class="k">4</div><h3>Invest in the first 90 days</h3><p>Churn is highest in months 2 and 3, so onboarding is the cheapest place to improve retention.</p></article><article class="action" role="listitem"><div class="k">5</div><h3>Test an early-upgrade nudge</h3><p>Early upgraders retain better (77.8% vs 65.3%, n = 288), but engaged customers may simply be the ones who upgrade.</p></article></div>
+  </section>
 
-  <footer>
+  <footer id="method">
     <p><b>Method.</b> SQL (SQLite) builds MRR, churn, cohorts, CAC and diagnostics. Python fits Kaplan-Meier survival curves (customers still active in Dec 2025 are censored) and projects 60-month gross-profit LTV: observed curve to month 24, then constant churn at each channel's months 13 to 24 average. Gross margin of 70% is an assumption. Bootstrap intervals capture sampling noise only, not the tail assumption.</p>
     <p><b>Limits.</b> Mix-adjusted churn controls for channel only. Plan and channel overlap, so plan retention is not a pure plan effect. The price-rise estimate assumes excess churn was caused by the rise.</p>
   </footer>
@@ -417,10 +489,27 @@ function drawAll(){drawMrr();drawBridge();drawKm();drawLtv();drawHazard();drawMi
 seg($('#bridgeSeg'),[{id:'all',label:'All'},{id:'2023',label:'2023'},{id:'2024',label:'2024'},{id:'2025',label:'2025'}],'all',v=>{state.bridge=v;drawBridge();});
 seg($('#kmSeg'),[{id:'channel',label:'Channel'},{id:'plan',label:'Plan'}],'channel',v=>{state.km=v;drawKm();});
 seg($('#ltvSeg'),[{id:'12',label:'12 mo'},{id:'24',label:'24 mo'},{id:'60',label:'60 mo'}],'60',v=>{state.ltv=v;drawLtv();});
+
+$('#tArpu').textContent=fmtMoney(M.arpu_paying[last],2);
+function drawSpark(){const sv=$('#bgSpark');sv.innerHTML='';const v=M.mrr,mx=Math.max(...v);const X=i=>1000*i/(v.length-1),Y=x=>300-(x/mx)*270;
+  const d=v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join('');
+  const defs=el('defs',{},sv);const g=el('linearGradient',{id:'sg',x1:0,y1:0,x2:0,y2:1},defs);
+  el('stop',{offset:'0%','stop-color':'#d32030','stop-opacity':.45},g);el('stop',{offset:'100%','stop-color':'#d32030','stop-opacity':0},g);
+  el('path',{d:d+'L1000 300L0 300Z',fill:'url(#sg)'},sv);el('path',{d,fill:'none',stroke:'#ff6b78','stroke-width':2.5,'vector-effect':'non-scaling-stroke',opacity:.8},sv);}
+(function rails(){
+  const rows=[...D.ltv].sort((a,b)=>b.ltv_60m-a.ltv_60m);const host=$('#chRail');
+  host.innerHTML=rows.map((r,i)=>`<article class="rank" role="listitem" tabindex="0" style="--tone:${CH[r.channel]}" aria-label="Number ${i+1}: ${label(r.channel)}, ${fmtMoney(r.ltv_60m)} projected profit per customer">
+    <div class="num" aria-hidden="true">${i+1}</div><div class="body"><h3>${label(r.channel)}</h3>
+    <div class="ltv">${fmtMoney(r.ltv_60m)}</div><div class="sub">60-month profit per customer</div>
+    <dl><dt>CAC</dt><dd>${fmtMoney(r.cac,2)}</dd><dt>12-mo retention</dt><dd>${(D.km.channel[r.channel][12]*100).toFixed(1)}%</dd><dt>LTV:CAC</dt><dd>${r.ltv_to_cac_60m.toFixed(1)}x${r.channel==='organic'?'*':''}</dd><dt>Payback</dt><dd>${r.payback_month} mo</dd></dl>
+    ${r.channel==='organic'?'<div class="flag">*CAC only partly tracked; ratio overstated</div>':''}</div></article>`).join('');
+  document.querySelectorAll('.rail-btn').forEach(b=>b.addEventListener('click',()=>{const rl=b.closest('.rail-sec').querySelector('.rail');rl.scrollBy({left:(+b.dataset.dir)*rl.clientWidth*0.8,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
+})();
+drawSpark();
 drawTable();drawAll();
 let lastW=innerWidth;let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(Math.abs(innerWidth-lastW)>0||true){lastW=innerWidth;drawAll();}},120);}).observe(document.body);
-const tb=$('#themeBtn');tb.onclick=()=>{const dark=document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme=dark?'light':'dark';tb.setAttribute('aria-pressed',String(!dark));drawAll();};
+const tb=$('#themeBtn');tb.onclick=()=>{const light=document.documentElement.dataset.theme==='light';
+  document.documentElement.dataset.theme=light?'dark':'light';tb.textContent=light?'Light mode':'Dark mode';tb.setAttribute('aria-pressed',String(!light));drawAll();drawSpark();};
 })();
 </script>
 </body>
