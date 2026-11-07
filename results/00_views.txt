@@ -1,0 +1,5 @@
+view_name  row_count
+---------  ---------
+v_sm       281517   
+v_c        25000    
+v_spend    180      

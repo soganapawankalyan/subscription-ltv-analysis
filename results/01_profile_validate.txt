@@ -1,0 +1,76 @@
+tbl                  n     
+-------------------  ------
+customers            25000 
+subscription_months  281517
+events               41208 
+marketing_spend      180   
+first_month  last_month  months
+-----------  ----------  ------
+2023-01-01   2025-12-01  36    
+channel      customers  pct   basic  standard  premium  promo_pct
+-----------  ---------  ----  -----  --------  -------  ---------
+organic      7465       29.9  2213   3733      1519     6.6      
+paid_social  5995       24.0  2999   2412      584      7.0      
+referral     4767       19.1  1143   2419      1205     5.8      
+paid_search  4005       16.0  1597   1809      599      8.3      
+partnership  2768       11.1  954    1262      552      7.1      
+signup_year  channel      customers  pct_of_year
+-----------  -----------  ---------  -----------
+2023         paid_social  2077       31.2       
+2023         organic      1998       30.0       
+2023         paid_search  1143       17.2       
+2023         referral     722        10.9       
+2023         partnership  711        10.7       
+2024         organic      2482       29.8       
+2024         paid_social  2070       24.9       
+2024         referral     1534       18.4       
+2024         paid_search  1359       16.3       
+2024         partnership  882        10.6       
+2025         organic      2985       29.8       
+2025         referral     2511       25.1       
+2025         paid_social  1848       18.4       
+2025         paid_search  1503       15.0       
+2025         partnership  1175       11.7       
+event_type  events
+----------  ------
+signup      25000 
+cancel      9977  
+upgrade     2076  
+downgrade   1643  
+pause       1549  
+resume      963   
+status  plan      rows_   min_mrr  max_mrr
+------  --------  ------  -------  -------
+active  Basic     90226   4.0      7.99   
+active  Premium   59561   9.99     19.99  
+active  Standard  128728  7.0      15.99  
+paused  Basic     888     0.0      0.0    
+paused  Premium   663     0.0      0.0    
+paused  Standard  1451    0.0      0.0    
+duplicate_customer_months
+-------------------------
+0                        
+customers_without_one_signup
+----------------------------
+0                           
+customers_with_multiple_cancels
+-------------------------------
+0                              
+billed_after_cancel
+-------------------
+0                  
+first_bill_not_signup_month
+---------------------------
+0                          
+customers_with_gaps
+-------------------
+0                  
+paused_but_billed  active_but_not_billed
+-----------------  ---------------------
+0                  0                    
+channel_months  months  channels
+--------------  ------  --------
+180             36      5       
+signup_channel_months_without_spend
+-----------------------------------
+0                                  

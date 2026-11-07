@@ -1,0 +1,80 @@
+channel      total_spend  customers_acquired  cac   
+-----------  -----------  ------------------  ------
+paid_social  609768.0     5995                101.71
+paid_search  329046.0     4005                82.16 
+partnership  113617.0     2768                41.05 
+referral     123360.0     4767                25.88 
+organic      60647.0      7465                8.12  
+channel      yr    new_customers  cac   
+-----------  ----  -------------  ------
+organic      2023  1998           8.1   
+organic      2024  2482           8.16  
+organic      2025  2985           8.11  
+paid_search  2023  1143           74.47 
+paid_search  2024  1359           81.22 
+paid_search  2025  1503           88.85 
+paid_social  2023  2077           91.01 
+paid_social  2024  2070           100.87
+paid_social  2025  1848           114.68
+partnership  2023  711            39.44 
+partnership  2024  882            41.58 
+partnership  2025  1175           41.61 
+referral     2023  722            24.8  
+referral     2024  1534           25.76 
+referral     2025  2511           26.26 
+window_months  channel      signups_in_window  cac    revenue_per_signup  gross_profit_ltv  ltv_to_cac
+-------------  -----------  -----------------  -----  ------------------  ----------------  ----------
+12             organic      4740               8.18   129.6               90.72             11.08     
+12             referral     2461               25.21  148.09              103.67            4.11      
+12             partnership  1660               40.87  132.56              92.79             2.27      
+12             paid_search  2645               78.46  116.89              81.82             1.04      
+12             paid_social  4333               96.69  98.38               68.87             0.71      
+24             organic      2209               7.99   220.83              154.58            19.34     
+24             referral     841                25.07  271.52              190.06            7.58      
+24             partnership  799                39.34  239.35              167.55            4.26      
+24             paid_search  1263               75.24  197.47              138.23            1.84      
+24             paid_social  2260               90.94  162.07              113.45            1.25      
+channel      cac    payback_month  gp_per_signup_12m  gp_per_signup_24m
+-----------  -----  -------------  -----------------  -----------------
+organic      7.99   1              88.63              154.58           
+referral     25.07  3              103.42             190.06           
+partnership  39.34  5              92.43              167.55           
+paid_search  75.24  12             80.0               138.23           
+paid_social  90.94  18             69.64              113.45           
+channel      tenure_month  cum_gross_profit_per_signup
+-----------  ------------  ---------------------------
+organic      1             8.89                       
+organic      3             16.95                      
+organic      6             24.39                      
+organic      9             31.18                      
+organic      12            37.31                      
+organic      18            42.84                      
+organic      24            47.82                      
+paid_search  1             8.3                        
+paid_search  3             15.51                      
+paid_search  6             22.27                      
+paid_search  9             28.24                      
+paid_search  12            33.76                      
+paid_search  18            38.6                       
+paid_search  24            42.91                      
+paid_social  1             7.83                       
+paid_social  3             14.46                      
+paid_social  6             20.25                      
+paid_social  9             25.3                       
+paid_social  12            29.68                      
+paid_social  18            33.38                      
+paid_social  24            36.45                      
+partnership  1             8.65                       
+partnership  3             16.72                      
+partnership  6             24.51                      
+partnership  9             31.77                      
+partnership  12            38.57                      
+partnership  18            44.97                      
+partnership  24            50.79                      
+referral     1             9.6                        
+referral     3             18.63                      
+referral     6             27.27                      
+referral     9             35.48                      
+referral     12            43.28                      
+referral     18            50.53                      
+referral     24            57.37                      
